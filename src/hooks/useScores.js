@@ -8,21 +8,34 @@ export const NUM_ROWS  = 22           // rows visible per column (512px / 24px r
 export const NUM_CELLS = NUM_COLS * NUM_ROWS  // 176 independent cells
 
 // Real mode: expand 8 backend values → 176 cells (all rows in a column get same value)
-function expandToGrid(eightVals) {
-  const grid = []
-  for (let col = 0; col < NUM_COLS; col++) {
-    const v = eightVals[col] ?? 0
-    for (let row = 0; row < NUM_ROWS; row++) grid.push(v)
-  }
-  return grid
-}
+// Parse the JSON state structure:
+// {"Red": {"1": [row0, ..., row21], ...}, "Blue": {"1": [row0, ..., row21], ...}}
+function parseJsonState(data) {
+  const grid = Array(NUM_CELLS).fill(0)
+  if (!data) return grid
 
-function parseTextFile(text) {
-  const lines = text.trim().split(/[\n,\s]+/).filter(Boolean)
-  return lines.slice(0, NUM_COLS).map(n => {
-    const v = parseInt(n, 10)
-    return isNaN(v) ? 0 : Math.max(0, v)
-  })
+  const red = data.Red || {}
+  const blue = data.Blue || {}
+
+  // Red columns 1-4 map to columns 0-3 on the screen
+  for (let c = 0; c < 4; c++) {
+    const colKey = String(c + 1)
+    const colVals = red[colKey] || []
+    for (let r = 0; r < NUM_ROWS; r++) {
+      grid[c * NUM_ROWS + r] = Number(colVals[r]) || 0
+    }
+  }
+
+  // Blue columns 1-4 map to columns 4-7 on the screen
+  for (let c = 0; c < 4; c++) {
+    const colKey = String(c + 1)
+    const colVals = blue[colKey] || []
+    for (let r = 0; r < NUM_ROWS; r++) {
+      grid[(c + 4) * NUM_ROWS + r] = Number(colVals[r]) || 0
+    }
+  }
+
+  return grid
 }
 
 export function useScores() {
@@ -64,10 +77,11 @@ export function useScores() {
       try {
         const res  = await fetch(DATA_URL, { cache: 'no-store' })
         if (!res.ok) return
-        const text = await res.text()
-        const vals = parseTextFile(text)
-        setScores(expandToGrid(vals))
-      } catch { /* ignore */ }
+        const data = await res.json()
+        setScores(parseJsonState(data))
+      } catch (err) {
+        console.error("Error loading scores JSON:", err)
+      }
     }
     poll()
     const id = setInterval(poll, POLL_MS)
