@@ -1,33 +1,36 @@
-import Digit from './Digit'
+import RollingDigit from './RollingDigit'
 
-const DIGIT_H   = 10
-const ROW_GAP   = 14
-const ROW_H     = DIGIT_H + ROW_GAP   // 24px → ~21 rows in 512px
-const DIGIT_GAP = 1
+const COUNTING_UNIT_H = 16 // height of one יחידת ספירה at the default spec
 
-// Each row gets its own independent value from the `values` array
-export default function RepeatingCounter({ values = [], color = '#FF2200', columnWidth = 62, height = 512 }) {
-  const DIGIT_W = Math.floor((columnWidth - 4 - 5 * DIGIT_GAP) / 6)
-  const usedW   = 6 * DIGIT_W + 5 * DIGIT_GAP
-  const xPad    = Math.floor((columnWidth - usedW) / 2)
-  const numRows = Math.ceil(height / ROW_H) + 1
+// Renders one טור ספירה: a vertical stack of independent multi-digit values
+export default function RepeatingCounter({
+  values = [],
+  color = '#FF2200',
+  columnWidth = 60,
+  unitGutter = 0,
+  digitsPerUnit = 6,
+  font = 'ABC Connect Mono Nail',
+}) {
+  const fontSize = Math.floor(columnWidth / (digitsPerUnit * 0.6)) // mono chars fill columnWidth
+  const maxVal = 10 ** digitsPerUnit - 1
 
   return (
-    <div style={{ width: columnWidth, height, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {Array.from({ length: numRows }, (_, i) => {
-        const cellVal = values[i] ?? 0
-        const str = String(Math.min(Math.max(Math.floor(cellVal), 0), 999999)).padStart(6, '0')
+    // marginTop (not CSS `gap`) so unitGutter can go negative and overlap rows
+    <div style={{ width: columnWidth, display: 'flex', flexDirection: 'column' }}>
+      {values.map((cellVal, i) => {
+        const str = String(Math.min(Math.max(Math.floor(cellVal ?? 0), 0), maxVal)).padStart(digitsPerUnit, '0')
         return (
           <div
             key={i}
             style={{
-              display: 'flex', flexDirection: 'row', gap: DIGIT_GAP,
-              paddingLeft: xPad, height: ROW_H, flexShrink: 0,
-              alignItems: 'flex-start', paddingTop: 2,
+              height: COUNTING_UNIT_H, flexShrink: 0,
+              marginTop: i === 0 ? 0 : unitGutter,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              whiteSpace: 'nowrap',
             }}
           >
             {str.split('').map((ch, j) => (
-              <Digit key={j} value={Number(ch)} width={DIGIT_W} height={DIGIT_H} color={color} />
+              <RollingDigit key={j} digit={ch} fontSize={fontSize} color={color} font={font} />
             ))}
           </div>
         )

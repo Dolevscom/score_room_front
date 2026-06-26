@@ -1,35 +1,34 @@
-import Section from './Section'
-import { NUM_ROWS } from '../hooks/useScores'
+import ScreenColumn from './ScreenColumn'
+import { MAX_COUNTING_UNITS, DEFAULT_COUNTING_UNITS } from '../hooks/useScores'
 
 const RED  = '#FF2200'
 const BLUE = '#0055FF'
 
-// Layout: [sec0(126)][2px][sec1(126)] [8px gap] [sec2(126)][2px][sec3(126)]
-// Total: 2×(126+2+126) + 8 = 2×254 + 8 = 516px → 4px clipped on right (overflow:hidden)
+// Renders the 4 מסכי ספירה (2 red, 2 blue). `gutter` controls the gap between
+// screen columns only — it never touches digit size or counting-column width.
+export default function ScoreBoard({
+  scores = [],
+  gutter = 8,
+  unitGutter = 0,
+  digitsPerUnit = 6,
+  unitsPerColumn = DEFAULT_COUNTING_UNITS,
+  font = 'ABC Connect Mono Nail',
+}) {
+  // Each counting column owns a MAX_COUNTING_UNITS-sized slot; only show the first `unitsPerColumn`
+  const col = (n) => scores.slice(n * MAX_COUNTING_UNITS, n * MAX_COUNTING_UNITS + unitsPerColumn)
 
-export default function ScoreBoard({ scores = [] }) {
-  // Split flat 176-cell array into 8 column-arrays of NUM_ROWS each
-  const col = (n) => scores.slice(n * NUM_ROWS, (n + 1) * NUM_ROWS)
+  const screenColumnProps = { unitGutter, digitsPerUnit, font }
 
   return (
     <div style={{
-      width: 512, height: 512,
       background: '#000',
       display: 'flex', flexDirection: 'row',
-      overflow: 'hidden',
+      gap: gutter,
     }}>
-      {/* RED half */}
-      <Section left={col(0)} right={col(1)} color={RED} />
-      <div style={{ width: 2, height: '100%', background: '#1a1a1a', flexShrink: 0 }} />
-      <Section left={col(2)} right={col(3)} color={RED} />
-
-      {/* Physical screen gap between RED and BLUE panels */}
-      <div style={{ width: 8, height: '100%', background: '#080808', flexShrink: 0 }} />
-
-      {/* BLUE half */}
-      <Section left={col(4)} right={col(5)} color={BLUE} />
-      <div style={{ width: 2, height: '100%', background: '#1a1a1a', flexShrink: 0 }} />
-      <Section left={col(6)} right={col(7)} color={BLUE} />
+      <ScreenColumn left={col(0)} right={col(1)} color={RED}  {...screenColumnProps} />
+      <ScreenColumn left={col(2)} right={col(3)} color={RED}  {...screenColumnProps} />
+      <ScreenColumn left={col(4)} right={col(5)} color={BLUE} {...screenColumnProps} />
+      <ScreenColumn left={col(6)} right={col(7)} color={BLUE} {...screenColumnProps} />
     </div>
   )
 }
