@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import ScoreBoard from './components/ScoreBoard'
-import { useScores, DEFAULT_COUNTING_UNITS } from './hooks/useScores'
+import SummaryScreen from './components/SummaryScreen'
+import { useScores, DEFAULT_COUNTING_UNITS, MAX_COUNTING_UNITS } from './hooks/useScores'
 
 const FONTS = [
   'ABC Connect Mono Nail',
@@ -12,12 +13,22 @@ const FONTS = [
   'The Basics Dots',
 ]
 
+const SUMMARY_VARIANTS = [
+  { value: 'climbing',  label: '1: climbing' },
+  { value: 'normal',    label: '2: normal' },
+  { value: 'stretched', label: '2.5: stretched' },
+  { value: 'merged',    label: '3: merged' },
+]
+
 const DEFAULTS = {
   gutter: 8,
   unitGutter: 0,
   digitsPerUnit: 6,
   unitsPerColumn: DEFAULT_COUNTING_UNITS,
   font: FONTS[0],
+  view: 'main',
+  summaryVariant: 'normal',
+  summaryDigits: 8,
 }
 
 function usePersisted(key, fallback) {
@@ -38,6 +49,9 @@ export default function App() {
   const [digitsPerUnit, setDigitsPerUnit]   = usePersisted('scoreroom_digitsPerUnit', DEFAULTS.digitsPerUnit)
   const [unitsPerColumn, setUnitsPerColumn] = usePersisted('scoreroom_unitsPerColumn', DEFAULTS.unitsPerColumn)
   const [font, setFont]                     = usePersisted('scoreroom_font', DEFAULTS.font)
+  const [view, setView]                     = usePersisted('scoreroom_view', DEFAULTS.view)
+  const [summaryVariant, setSummaryVariant] = usePersisted('scoreroom_summaryVariant', DEFAULTS.summaryVariant)
+  const [summaryDigits, setSummaryDigits]   = usePersisted('scoreroom_summaryDigits', DEFAULTS.summaryDigits)
 
   const resetDefaults = () => {
     setGutter(DEFAULTS.gutter)
@@ -45,7 +59,11 @@ export default function App() {
     setDigitsPerUnit(DEFAULTS.digitsPerUnit)
     setUnitsPerColumn(DEFAULTS.unitsPerColumn)
     setFont(DEFAULTS.font)
+    setSummaryDigits(DEFAULTS.summaryDigits)
   }
+
+  const redTotal  = scores.slice(0, 4 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
+  const blueTotal = scores.slice(4 * MAX_COUNTING_UNITS, 8 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
 
   return (
     <div style={{
@@ -56,24 +74,55 @@ export default function App() {
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      <ScoreBoard
-        scores={scores}
-        gutter={gutter}
-        unitGutter={unitGutter}
-        digitsPerUnit={digitsPerUnit}
-        unitsPerColumn={unitsPerColumn}
-        font={font}
-      />
+      {view === 'main' ? (
+        <ScoreBoard
+          scores={scores}
+          gutter={gutter}
+          unitGutter={unitGutter}
+          digitsPerUnit={digitsPerUnit}
+          unitsPerColumn={unitsPerColumn}
+          font={font}
+        />
+      ) : (
+        <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant={summaryVariant} font={font} digits={summaryDigits} />
+      )}
 
       <div className="scoreroom-controls" style={{
         position: 'fixed', bottom: 6, left: 0, right: 0,
         display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
         gap: 10, color: '#888', fontFamily: 'monospace', fontSize: 9,
       }}>
-        <Slider label="screen gap" value={gutter} min={0} max={80} onChange={setGutter} />
-        <Slider label="unit gap" value={unitGutter} min={-20} max={20} onChange={setUnitGutter} />
-        <Slider label="digits" value={digitsPerUnit} min={1} max={10} onChange={setDigitsPerUnit} />
-        <Slider label="units" value={unitsPerColumn} min={4} max={48} onChange={setUnitsPerColumn} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          screen
+          <select value={view} onChange={(e) => setView(e.target.value)}>
+            <option value="main">main board</option>
+            <option value="summary">summary screen</option>
+          </select>
+        </label>
+
+        {view === 'main' && (
+          <>
+            <Slider label="screen gap" value={gutter} min={0} max={80} onChange={setGutter} />
+            <Slider label="unit gap" value={unitGutter} min={-20} max={20} onChange={setUnitGutter} />
+            <Slider label="digits" value={digitsPerUnit} min={1} max={10} onChange={setDigitsPerUnit} />
+            <Slider label="units" value={unitsPerColumn} min={4} max={48} onChange={setUnitsPerColumn} />
+          </>
+        )}
+
+        {view === 'summary' && (
+          <>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              layout
+              <select value={summaryVariant} onChange={(e) => setSummaryVariant(e.target.value)}>
+                {SUMMARY_VARIANTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
+              </select>
+            </label>
+            {summaryVariant !== 'climbing' && (
+              <Slider label="digits" value={summaryDigits} min={1} max={16} onChange={setSummaryDigits} />
+            )}
+          </>
+        )}
+
         <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           font
           <select value={font} onChange={(e) => setFont(e.target.value)}>
