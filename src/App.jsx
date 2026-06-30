@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import ScoreBoard from './components/ScoreBoard'
 import SummaryScreen from './components/SummaryScreen'
-import { useScores, DEFAULT_COUNTING_UNITS, MAX_COUNTING_UNITS } from './hooks/useScores'
+import { useScores, DEFAULT_COUNTING_UNITS } from './hooks/useScores'
 
 const FONTS = [
   'ABC Connect Mono Nail',
@@ -43,7 +43,7 @@ function usePersisted(key, fallback) {
 }
 
 export default function App() {
-  const scores = useScores()
+  const { scores, redTotal, blueTotal } = useScores()
   const [gutter, setGutter]                 = usePersisted('scoreroom_gutter', DEFAULTS.gutter)
   const [unitGutter, setUnitGutter]         = usePersisted('scoreroom_unitGutter', DEFAULTS.unitGutter)
   const [digitsPerUnit, setDigitsPerUnit]   = usePersisted('scoreroom_digitsPerUnit', DEFAULTS.digitsPerUnit)
@@ -62,8 +62,7 @@ export default function App() {
     setSummaryDigits(DEFAULTS.summaryDigits)
   }
 
-  const redTotal  = scores.slice(0, 4 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
-  const blueTotal = scores.slice(4 * MAX_COUNTING_UNITS, 8 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
+
 
   return (
     <div style={{
