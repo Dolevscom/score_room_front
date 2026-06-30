@@ -12,10 +12,10 @@ export const MAX_COUNTING_UNITS = 64      // headroom so the live "units per col
 export const NUM_CELLS = COUNTING_COLUMNS * MAX_COUNTING_UNITS
 
 // Real mode: parse the JSON state structure:
-// {"Red": {"1": [unit0, unit1, ...], ...}, "Blue": {"1": [...], ...}}
+// {"Red": {"1": [unit0, unit1, ...], ...}, "Blue": {"1": [...], ...}, "RedTotal": 0, "BlueTotal": 0}
 function parseJsonState(data) {
   const grid = Array(NUM_CELLS).fill(0)
-  if (!data) return grid
+  if (!data) return { scores: grid, redTotal: 0, blueTotal: 0 }
 
   const red = data.Red || {}
   const blue = data.Blue || {}
@@ -38,11 +38,11 @@ function parseJsonState(data) {
     }
   }
 
-  return grid
+  return { scores: grid, redTotal: data.RedTotal || 0, blueTotal: data.BlueTotal || 0 }
 }
 
 export function useScores() {
-  const [scores, setScores] = useState(Array(NUM_CELLS).fill(0))
+  const [state, setState] = useState({ scores: Array(NUM_CELLS).fill(0), redTotal: 0, blueTotal: 0 })
   const cellRef = useRef(Array(NUM_CELLS).fill(0))
 
   useEffect(() => {
@@ -56,7 +56,14 @@ export function useScores() {
         if (Math.random() < PRESS_CHANCE) {
           const i = Math.floor(Math.random() * NUM_CELLS)
           cellRef.current[i] += 1
-          setScores([...cellRef.current])
+          setState(prev => {
+            const isRed = i < 4 * MAX_COUNTING_UNITS
+            return {
+              scores: [...cellRef.current],
+              redTotal: prev.redTotal + (isRed ? 1 : 0),
+              blueTotal: prev.blueTotal + (isRed ? 0 : 1),
+            }
+          })
         }
       }, TICK)
 
@@ -69,7 +76,7 @@ export function useScores() {
         const res  = await fetch(DATA_URL, { cache: 'no-store' })
         if (!res.ok) return
         const data = await res.json()
-        setScores(parseJsonState(data))
+        setState(parseJsonState(data))
       } catch (err) {
         console.error("Error loading scores JSON:", err)
       }
@@ -79,5 +86,5 @@ export function useScores() {
     return () => clearInterval(id)
   }, [])
 
-  return scores
+  return state
 }
