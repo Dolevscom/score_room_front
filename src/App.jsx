@@ -53,6 +53,27 @@ export default function App() {
   const [summaryVariant, setSummaryVariant] = usePersisted('scoreroom_summaryVariant', DEFAULTS.summaryVariant)
   const [summaryDigits, setSummaryDigits]   = usePersisted('scoreroom_summaryDigits', DEFAULTS.summaryDigits)
 
+  const [showControls, setShowControls] = useState(true)
+
+  useEffect(() => {
+    let timeout;
+    const handleMouseMove = () => {
+      setShowControls(true);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    timeout = setTimeout(() => setShowControls(false), 3000);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      clearTimeout(timeout);
+    };
+  }, []);
+
   const resetDefaults = () => {
     setGutter(DEFAULTS.gutter)
     setUnitGutter(DEFAULTS.unitGutter)
@@ -90,6 +111,9 @@ export default function App() {
         position: 'fixed', bottom: 6, left: 0, right: 0,
         display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
         gap: 10, color: '#888', fontFamily: 'monospace', fontSize: 9,
+        opacity: showControls ? 1 : 0,
+        pointerEvents: showControls ? 'auto' : 'none',
+        transition: 'opacity 0.3s ease',
       }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           screen
