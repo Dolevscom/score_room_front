@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import ScoreBoard from './components/ScoreBoard'
 import SummaryScreen from './components/SummaryScreen'
-import { useScores, DEFAULT_COUNTING_UNITS, MAX_COUNTING_UNITS } from './hooks/useScores'
+import { useScores, DEFAULT_COUNTING_UNITS } from './hooks/useScores'
 
 const FONTS = [
   'ABC Connect Mono Nail',
@@ -43,7 +43,7 @@ function usePersisted(key, fallback) {
 }
 
 export default function App() {
-  const scores = useScores()
+  const { scores, redTotal, blueTotal } = useScores()
   const [gutter, setGutter]                 = usePersisted('scoreroom_gutter', DEFAULTS.gutter)
   const [unitGutter, setUnitGutter]         = usePersisted('scoreroom_unitGutter', DEFAULTS.unitGutter)
   const [digitsPerUnit, setDigitsPerUnit]   = usePersisted('scoreroom_digitsPerUnit', DEFAULTS.digitsPerUnit)
@@ -52,6 +52,27 @@ export default function App() {
   const [view, setView]                     = usePersisted('scoreroom_view', DEFAULTS.view)
   const [summaryVariant, setSummaryVariant] = usePersisted('scoreroom_summaryVariant', DEFAULTS.summaryVariant)
   const [summaryDigits, setSummaryDigits]   = usePersisted('scoreroom_summaryDigits', DEFAULTS.summaryDigits)
+
+  const [showControls, setShowControls] = useState(true)
+
+  useEffect(() => {
+    let timeout;
+    const handleMouseMove = () => {
+      setShowControls(true);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    timeout = setTimeout(() => setShowControls(false), 3000);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const resetDefaults = () => {
     setGutter(DEFAULTS.gutter)
@@ -62,8 +83,7 @@ export default function App() {
     setSummaryDigits(DEFAULTS.summaryDigits)
   }
 
-  const redTotal  = scores.slice(0, 4 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
-  const blueTotal = scores.slice(4 * MAX_COUNTING_UNITS, 8 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
+
 
   return (
     <div style={{
@@ -91,6 +111,9 @@ export default function App() {
         position: 'fixed', bottom: 6, left: 0, right: 0,
         display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
         gap: 10, color: '#888', fontFamily: 'monospace', fontSize: 9,
+        opacity: showControls ? 1 : 0,
+        pointerEvents: showControls ? 'auto' : 'none',
+        transition: 'opacity 0.3s ease',
       }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           screen
