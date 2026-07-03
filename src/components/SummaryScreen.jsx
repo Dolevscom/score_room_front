@@ -91,9 +91,33 @@ function MergedStrip({ redTotal, blueTotal, font, digits }) {
   )
 }
 
+// אופציה 4: territory — הקו זז לפי יחס הניקוד. המנצח לוקח יותר שטח, ספרותיו גדולות יותר
+function TerritoryScreen({ redTotal, blueTotal, font, digits }) {
+  const total = redTotal + blueTotal
+  const redRatio = total === 0 ? 0.5 : redTotal / total
+  const redW = Math.max(20, Math.round(redRatio * (SCREEN_W - DIVIDER)))
+  const blueW = Math.max(20, SCREEN_W - DIVIDER - redW)
+
+  return (
+    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex', overflow: 'hidden' }}>
+      <div style={{ width: redW, flexShrink: 0, overflow: 'hidden', transition: 'width 0.7s ease' }}>
+        <DigitRow total={redTotal} color={RED} font={font} width={redW} height={SCREEN_H} digits={digits} />
+      </div>
+      <div style={{ width: DIVIDER, background: '#1a1a1a', flexShrink: 0 }} />
+      <div style={{ width: blueW, flexShrink: 0, overflow: 'hidden', transition: 'width 0.7s ease' }}>
+        <DigitRow total={blueTotal} color={BLUE} font={font} width={blueW} height={SCREEN_H} digits={digits} />
+      </div>
+    </div>
+  )
+}
+
 export default function SummaryScreen({ redTotal = 0, blueTotal = 0, variant = 'normal', font = 'ABC Connect Mono Nail', digits = 8 }) {
   if (variant === 'merged') {
     return <MergedStrip redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+  }
+
+  if (variant === 'territory') {
+    return <TerritoryScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
   }
 
   const squareSize = (SCREEN_W - DIVIDER) / 2

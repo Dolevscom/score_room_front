@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ScoreBoard from './components/ScoreBoard'
 import SummaryScreen from './components/SummaryScreen'
 import { useScores, DEFAULT_COUNTING_UNITS } from './hooks/useScores'
@@ -18,7 +18,27 @@ const SUMMARY_VARIANTS = [
   { value: 'normal',    label: '2: normal' },
   { value: 'stretched', label: '2.5: stretched' },
   { value: 'merged',    label: '3: merged' },
+  { value: 'territory', label: '4: territory' },
 ]
+
+function playOvertakeSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(80, ctx.currentTime)
+    osc.frequency.exponentialRampToValueAtTime(35, ctx.currentTime + 0.45)
+    gain.gain.setValueAtTime(0, ctx.currentTime)
+    gain.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.55)
+    osc.onended = () => ctx.close()
+  } catch (_) {}
+}
 
 const DEFAULTS = {
   gutter: 8,
@@ -54,6 +74,16 @@ export default function App() {
   const [summaryDigits, setSummaryDigits]   = usePersisted('scoreroom_summaryDigits', DEFAULTS.summaryDigits)
 
   const [showControls, setShowControls] = useState(true)
+  const prevLeaderRef = useRef(null)
+
+  useEffect(() => {
+    if (redTotal + blueTotal === 0) return
+    const leader = redTotal > blueTotal ? 'red' : 'blue'
+    if (prevLeaderRef.current !== null && leader !== prevLeaderRef.current) {
+      playOvertakeSound()
+    }
+    prevLeaderRef.current = leader
+  }, [redTotal, blueTotal])
 
   useEffect(() => {
     let timeout;
@@ -140,7 +170,7 @@ export default function App() {
                 {SUMMARY_VARIANTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
               </select>
             </label>
-            {summaryVariant !== 'climbing' && (
+            {summaryVariant !== 'climbing' && summaryVariant !== 'territory' && (
               <Slider label="digits" value={summaryDigits} min={1} max={16} onChange={setSummaryDigits} />
             )}
           </>
