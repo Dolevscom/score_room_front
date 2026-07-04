@@ -126,12 +126,14 @@ function BlocksScreen({ redTotal, blueTotal, font, digits }) {
   )
 }
 
-// אופציה 4: territory — הקו זז לפי יחס הניקוד. המנצח לוקח יותר שטח, ספרותיו גדולות יותר
+// אופציה 4: territory — הקו זז לפי יחס מוגבר. הפרשים קטנים נראים הרבה גדולים יותר.
+const TERRITORY_AMP = 3  // כל הפרש מוגבר פי 3 ויזואלית (0.55/0.45 → 0.65/0.35)
 function TerritoryScreen({ redTotal, blueTotal, font, digits }) {
   const total = redTotal + blueTotal
-  const redRatio = total === 0 ? 0.5 : redTotal / total
-  const redW = Math.max(20, Math.round(redRatio * (SCREEN_W - DIVIDER)))
-  const blueW = Math.max(20, SCREEN_W - DIVIDER - redW)
+  const raw = total === 0 ? 0.5 : redTotal / total
+  const redRatio = Math.max(0.04, Math.min(0.96, 0.5 + (raw - 0.5) * TERRITORY_AMP))
+  const redW = Math.round(redRatio * (SCREEN_W - DIVIDER))
+  const blueW = SCREEN_W - DIVIDER - redW
 
   return (
     <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex', overflow: 'hidden' }}>
