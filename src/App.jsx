@@ -171,7 +171,7 @@ export default function App() {
                 {SUMMARY_VARIANTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
               </select>
             </label>
-            {summaryVariant !== 'climbing' && summaryVariant !== 'territory' && summaryVariant !== 'blocks' && (
+            {summaryVariant !== 'climbing' && summaryVariant !== 'territory' && (
               <Slider label="digits" value={summaryDigits} min={1} max={16} onChange={setSummaryDigits} />
             )}
           </>

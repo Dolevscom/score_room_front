@@ -91,18 +91,37 @@ function MergedStrip({ redTotal, blueTotal, font, digits }) {
   )
 }
 
-// אופציה 5: blocks — שני בלוקים בגובה קבוע, רוחב יחסי לניקוד, צמודים אחד לשני
-function BlocksScreen({ redTotal, blueTotal }) {
+// אופציה 5: blocks — בלוקים צבעוניים עם כיתוב שחור מעל (היעדר צבע)
+// גודל הפונט קבוע כמו normal — לא משתנה עם הרוחב הדינמי
+function BlocksScreen({ redTotal, blueTotal, font, digits }) {
   const total = redTotal + blueTotal
   const redRatio = total === 0 ? 0.5 : redTotal / total
   const redW  = Math.max(4, Math.round(redRatio * (SCREEN_W - DIVIDER)))
   const blueW = Math.max(4, SCREEN_W - DIVIDER - redW)
 
+  const fixedHalf = (SCREEN_W - DIVIDER) / 2
+  const fontSize = Math.floor(fixedHalf / (digits * 0.65))
+
+  const Digits = ({ total: t }) => {
+    const str = clampDigits(t, digits)
+    return (
+      <div style={{ display: 'flex', flexShrink: 0 }}>
+        {str.split('').map((ch, i) => (
+          <RollingDigit key={i} digit={ch} fontSize={fontSize} color="#000" font={font} />
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex', alignItems: 'center' }}>
-      <div style={{ width: redW,   height: SCREEN_H, background: RED,       flexShrink: 0, transition: 'width 0.7s ease' }} />
+    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
+      <div style={{ width: redW, height: SCREEN_H, background: RED, flexShrink: 0, transition: 'width 0.7s ease', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Digits total={redTotal} />
+      </div>
       <div style={{ width: DIVIDER, height: SCREEN_H, background: '#1a1a1a', flexShrink: 0 }} />
-      <div style={{ width: blueW, height: SCREEN_H, background: BLUE,      flexShrink: 0, transition: 'width 0.7s ease' }} />
+      <div style={{ width: blueW, height: SCREEN_H, background: BLUE, flexShrink: 0, transition: 'width 0.7s ease', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Digits total={blueTotal} />
+      </div>
     </div>
   )
 }
@@ -137,7 +156,7 @@ export default function SummaryScreen({ redTotal = 0, blueTotal = 0, variant = '
   }
 
   if (variant === 'blocks') {
-    return <BlocksScreen redTotal={redTotal} blueTotal={blueTotal} />
+    return <BlocksScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
   }
 
   const squareSize = (SCREEN_W - DIVIDER) / 2
