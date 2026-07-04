@@ -48,3 +48,17 @@
 .scoreroom-controls select:hover {
   border-color: #444;
 }
+
+@keyframes overtake-flash {
+  0%   { opacity: 0; }
+  6%   { opacity: 0.8; }
+  22%  { opacity: 0; }
+  35%  { opacity: 0.55; }
+  50%  { opacity: 0; }
+  63%  { opacity: 0.32; }
+  100% { opacity: 0; }
+}
+.overtake-flash {
+  animation: overtake-flash 1s ease-out forwards;
+  pointer-events: none;
+}

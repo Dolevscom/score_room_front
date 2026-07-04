@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import RollingDigit from './RollingDigit'
 
 // מסך סכמה ראשי — total per side. Physical screen 96×48cm (2:1), split into
@@ -149,25 +150,52 @@ function TerritoryScreen({ redTotal, blueTotal, font, digits }) {
 }
 
 export default function SummaryScreen({ redTotal = 0, blueTotal = 0, variant = 'normal', font = 'ABC Connect Mono Nail', digits = 8 }) {
+  const [flash, setFlash] = useState(null) // { color, key }
+  const prevLeaderRef = useRef(null)
+  const flashTimerRef = useRef(null)
+  const flashKeyRef = useRef(0)
+
+  useEffect(() => {
+    if (redTotal + blueTotal === 0) return
+    const leader = redTotal > blueTotal ? 'red' : 'blue'
+    if (prevLeaderRef.current !== null && leader !== prevLeaderRef.current) {
+      clearTimeout(flashTimerRef.current)
+      flashKeyRef.current += 1
+      setFlash({ color: leader === 'red' ? RED : BLUE, key: flashKeyRef.current })
+      flashTimerRef.current = setTimeout(() => setFlash(null), 1050)
+    }
+    prevLeaderRef.current = leader
+  }, [redTotal, blueTotal])
+
+  let content
   if (variant === 'merged') {
-    return <MergedStrip redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+    content = <MergedStrip redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+  } else if (variant === 'territory') {
+    content = <TerritoryScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+  } else if (variant === 'blocks') {
+    content = <BlocksScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+  } else {
+    const squareSize = (SCREEN_W - DIVIDER) / 2
+    content = (
+      <>
+        <Square total={redTotal} color={RED} variant={variant} font={font} size={squareSize} digits={digits} />
+        <div style={{ width: DIVIDER, height: '100%', background: '#1a1a1a', flexShrink: 0 }} />
+        <Square total={blueTotal} color={BLUE} variant={variant} font={font} size={squareSize} digits={digits} />
+      </>
+    )
   }
-
-  if (variant === 'territory') {
-    return <TerritoryScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
-  }
-
-  if (variant === 'blocks') {
-    return <BlocksScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
-  }
-
-  const squareSize = (SCREEN_W - DIVIDER) / 2
 
   return (
-    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
-      <Square total={redTotal} color={RED} variant={variant} font={font} size={squareSize} digits={digits} />
-      <div style={{ width: DIVIDER, height: '100%', background: '#1a1a1a', flexShrink: 0 }} />
-      <Square total={blueTotal} color={BLUE} variant={variant} font={font} size={squareSize} digits={digits} />
+    <div style={{ position: 'relative', width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
+      {content}
+      {flash && (
+        <div
+          key={flash.key}
+          className="overtake-flash"
+          style={{ position: 'absolute', inset: 0, background: flash.color, zIndex: 20 }}
+          onAnimationEnd={() => setFlash(null)}
+        />
+      )}
     </div>
   )
 }
