@@ -19,6 +19,7 @@ const SUMMARY_VARIANTS = [
   { value: 'stretched', label: '2.5: stretched' },
   { value: 'merged',    label: '3: merged' },
   { value: 'territory', label: '4: territory' },
+  { value: 'blocks',    label: '5: blocks' },
 ]
 
 function playOvertakeSound() {
@@ -170,7 +171,7 @@ export default function App() {
                 {SUMMARY_VARIANTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
               </select>
             </label>
-            {summaryVariant !== 'climbing' && summaryVariant !== 'territory' && (
+            {summaryVariant !== 'climbing' && summaryVariant !== 'territory' && summaryVariant !== 'blocks' && (
               <Slider label="digits" value={summaryDigits} min={1} max={16} onChange={setSummaryDigits} />
             )}
           </>

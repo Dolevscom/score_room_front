@@ -91,6 +91,37 @@ function MergedStrip({ redTotal, blueTotal, font, digits }) {
   )
 }
 
+// אופציה 5: blocks — שני מרובעים צבעוניים, גודל כל אחד יחסי לניקוד, ללא מספרים
+function BlocksScreen({ redTotal, blueTotal }) {
+  const total = redTotal + blueTotal
+  const redRatio = total === 0 ? 0.5 : redTotal / total
+  const blueRatio = 1 - redRatio
+
+  const halfW = (SCREEN_W - DIVIDER) / 2
+  const maxSize = Math.min(halfW, SCREEN_H) - 20
+
+  const redSize  = Math.max(8, Math.round(redRatio  * maxSize * 2))
+  const blueSize = Math.max(8, Math.round(blueRatio * maxSize * 2))
+
+  const sqStyle = (size, color) => ({
+    width: size, height: size,
+    background: color,
+    transition: 'width 0.7s ease, height 0.7s ease',
+  })
+
+  return (
+    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
+      <div style={{ width: halfW, height: SCREEN_H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={sqStyle(redSize, RED)} />
+      </div>
+      <div style={{ width: DIVIDER, background: '#1a1a1a', flexShrink: 0 }} />
+      <div style={{ width: halfW, height: SCREEN_H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={sqStyle(blueSize, BLUE)} />
+      </div>
+    </div>
+  )
+}
+
 // אופציה 4: territory — הקו זז לפי יחס הניקוד. המנצח לוקח יותר שטח, ספרותיו גדולות יותר
 function TerritoryScreen({ redTotal, blueTotal, font, digits }) {
   const total = redTotal + blueTotal
@@ -118,6 +149,10 @@ export default function SummaryScreen({ redTotal = 0, blueTotal = 0, variant = '
 
   if (variant === 'territory') {
     return <TerritoryScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+  }
+
+  if (variant === 'blocks') {
+    return <BlocksScreen redTotal={redTotal} blueTotal={blueTotal} />
   }
 
   const squareSize = (SCREEN_W - DIVIDER) / 2
