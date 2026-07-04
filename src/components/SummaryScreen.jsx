@@ -91,33 +91,18 @@ function MergedStrip({ redTotal, blueTotal, font, digits }) {
   )
 }
 
-// אופציה 5: blocks — שני מרובעים צבעוניים, גודל כל אחד יחסי לניקוד, ללא מספרים
+// אופציה 5: blocks — שני בלוקים בגובה קבוע, רוחב יחסי לניקוד, צמודים אחד לשני
 function BlocksScreen({ redTotal, blueTotal }) {
   const total = redTotal + blueTotal
   const redRatio = total === 0 ? 0.5 : redTotal / total
-  const blueRatio = 1 - redRatio
-
-  const halfW = (SCREEN_W - DIVIDER) / 2
-  const maxSize = Math.min(halfW, SCREEN_H) - 20
-
-  const redSize  = Math.max(8, Math.round(redRatio  * maxSize * 2))
-  const blueSize = Math.max(8, Math.round(blueRatio * maxSize * 2))
-
-  const sqStyle = (size, color) => ({
-    width: size, height: size,
-    background: color,
-    transition: 'width 0.7s ease, height 0.7s ease',
-  })
+  const redW  = Math.max(4, Math.round(redRatio * (SCREEN_W - DIVIDER)))
+  const blueW = Math.max(4, SCREEN_W - DIVIDER - redW)
 
   return (
-    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
-      <div style={{ width: halfW, height: SCREEN_H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={sqStyle(redSize, RED)} />
-      </div>
-      <div style={{ width: DIVIDER, background: '#1a1a1a', flexShrink: 0 }} />
-      <div style={{ width: halfW, height: SCREEN_H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={sqStyle(blueSize, BLUE)} />
-      </div>
+    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex', alignItems: 'center' }}>
+      <div style={{ width: redW,   height: SCREEN_H, background: RED,       flexShrink: 0, transition: 'width 0.7s ease' }} />
+      <div style={{ width: DIVIDER, height: SCREEN_H, background: '#1a1a1a', flexShrink: 0 }} />
+      <div style={{ width: blueW, height: SCREEN_H, background: BLUE,      flexShrink: 0, transition: 'width 0.7s ease' }} />
     </div>
   )
 }
