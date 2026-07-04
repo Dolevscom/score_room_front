@@ -91,37 +91,45 @@ function MergedStrip({ redTotal, blueTotal, font, digits }) {
   )
 }
 
-// אופציה 5: blocks — בלוקים צבעוניים עם כיתוב שחור מעל (היעדר צבע)
-// גודל הפונט קבוע כמו normal — לא משתנה עם הרוחב הדינמי
+// אופציה 5: blocks — טקסט שחור קבוע במרכז, רק המלבן הצבעוני מאחוריו זז
+// המלבן מעוגן לדיוויידר (מרכז המסך) וגדל החוצה ככל שהצד מוביל
 function BlocksScreen({ redTotal, blueTotal, font, digits }) {
   const total = redTotal + blueTotal
   const redRatio = total === 0 ? 0.5 : redTotal / total
   const redW  = Math.max(4, Math.round(redRatio * (SCREEN_W - DIVIDER)))
   const blueW = Math.max(4, SCREEN_W - DIVIDER - redW)
 
-  const fixedHalf = (SCREEN_W - DIVIDER) / 2
-  const fontSize = Math.floor(fixedHalf / (digits * 0.65))
+  const halfW = (SCREEN_W - DIVIDER) / 2
+  const fontSize = Math.floor(halfW / (digits * 0.65))
 
-  const Digits = ({ total: t }) => {
+  const renderSide = (t, color, blockW, anchor) => {
     const str = clampDigits(t, digits)
     return (
-      <div style={{ display: 'flex', flexShrink: 0 }}>
-        {str.split('').map((ch, i) => (
-          <RollingDigit key={i} digit={ch} fontSize={fontSize} color="#000" font={font} />
-        ))}
+      <div style={{ position: 'relative', width: halfW, height: SCREEN_H, flexShrink: 0 }}>
+        <div style={{
+          position: 'absolute', top: 0, bottom: 0, [anchor]: 0,
+          width: blockW, background: color,
+          transition: 'width 0.7s ease',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ display: 'flex', flexShrink: 0 }}>
+            {str.split('').map((ch, i) => (
+              <RollingDigit key={i} digit={ch} fontSize={fontSize} color="#000" font={font} />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
     <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
-      <div style={{ width: redW, height: SCREEN_H, background: RED, flexShrink: 0, transition: 'width 0.7s ease', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Digits total={redTotal} />
-      </div>
+      {renderSide(redTotal,  RED,  redW,  'right')}
       <div style={{ width: DIVIDER, height: SCREEN_H, background: '#1a1a1a', flexShrink: 0 }} />
-      <div style={{ width: blueW, height: SCREEN_H, background: BLUE, flexShrink: 0, transition: 'width 0.7s ease', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Digits total={blueTotal} />
-      </div>
+      {renderSide(blueTotal, BLUE, blueW, 'left')}
     </div>
   )
 }
