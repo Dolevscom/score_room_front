@@ -91,8 +91,7 @@ function MergedStrip({ redTotal, blueTotal, font, digits }) {
   )
 }
 
-// אופציה 5: blocks — טקסט שחור קבוע במרכז, רק המלבן הצבעוני מאחוריו זז
-// המלבן מעוגן לדיוויידר (מרכז המסך) וגדל החוצה ככל שהצד מוביל
+// אופציה 5: blocks — קצות חיצוניים קבועים, טקסט קבוע, רק קו האמצע זזז
 function BlocksScreen({ redTotal, blueTotal, font, digits }) {
   const total = redTotal + blueTotal
   const redRatio = total === 0 ? 0.5 : redTotal / total
@@ -102,34 +101,27 @@ function BlocksScreen({ redTotal, blueTotal, font, digits }) {
   const halfW = (SCREEN_W - DIVIDER) / 2
   const fontSize = Math.floor(halfW / (digits * 0.65))
 
-  const renderSide = (t, color, blockW, anchor) => {
-    const str = clampDigits(t, digits)
-    return (
-      <div style={{ position: 'relative', width: halfW, height: SCREEN_H, flexShrink: 0 }}>
-        <div style={{
-          position: 'absolute', top: 0, bottom: 0, [anchor]: 0,
-          width: blockW, background: color,
-          transition: 'width 0.7s ease',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{ display: 'flex', flexShrink: 0 }}>
-            {str.split('').map((ch, i) => (
-              <RollingDigit key={i} digit={ch} fontSize={fontSize} color="#000" font={font} />
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const renderDigits = (t) => clampDigits(t, digits).split('').map((ch, i) => (
+    <RollingDigit key={i} digit={ch} fontSize={fontSize} color="#000" font={font} />
+  ))
 
   return (
-    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
-      {renderSide(redTotal,  RED,  redW,  'right')}
-      <div style={{ width: DIVIDER, height: SCREEN_H, background: '#1a1a1a', flexShrink: 0 }} />
-      {renderSide(blueTotal, BLUE, blueW, 'left')}
+    <div style={{ position: 'relative', width: SCREEN_W, height: SCREEN_H, background: '#000' }}>
+      {/* בלוק אדום: מעוגן לקצה שמאל, גדל ימינה */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: redW, background: RED, transition: 'width 0.7s ease' }} />
+      {/* דיוויידר: עוקב אחרי קצה ימין של האדום */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: redW, width: DIVIDER, background: '#1a1a1a', transition: 'left 0.7s ease' }} />
+      {/* בלוק כחול: מעוגן לקצה ימין, גדל שמאלה */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: blueW, background: BLUE, transition: 'width 0.7s ease' }} />
+
+      {/* טקסט אדום: תמיד במרכז ה-half השמאלי */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: halfW, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+        <div style={{ display: 'flex', flexShrink: 0 }}>{renderDigits(redTotal)}</div>
+      </div>
+      {/* טקסט כחול: תמיד במרכז ה-half הימני */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: halfW, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+        <div style={{ display: 'flex', flexShrink: 0 }}>{renderDigits(blueTotal)}</div>
+      </div>
     </div>
   )
 }
