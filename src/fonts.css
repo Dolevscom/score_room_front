@@ -56,3 +56,11 @@
   font-style: normal;
   font-display: block;
 }
+
+@font-face {
+  font-family: 'Narkiss Yair Mono';
+  src: url('/fonts/NarkissYairMono-Light.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}

@@ -5,12 +5,13 @@ import { useScores, DEFAULT_COUNTING_UNITS } from './hooks/useScores'
 
 const FONTS = [
   'ABC Connect Mono Nail',
-  'Doto Regular',
   'Doto Medium',
   'Doto SemiBold',
   'Doto Bold',
-  'Doto Black',
   'The Basics Dots',
+  'Narkiss Yair Mono',
+  'littlebit-dotty-variable',
+  'littlebit-square-variable',
 ]
 
 const SUMMARY_VARIANTS = [
@@ -19,6 +20,8 @@ const SUMMARY_VARIANTS = [
   { value: 'stretched', label: '2.5: stretched' },
   { value: 'merged',    label: '3: merged' },
   { value: 'territory', label: '4: territory' },
+  { value: 'territory-v', label: '4a: territory↕' },
+  { value: 'territory-h', label: '4b: territory↔' },
   { value: 'blocks',    label: '5: blocks' },
 ]
 
@@ -50,6 +53,8 @@ const DEFAULTS = {
   view: 'main',
   summaryVariant: 'normal',
   summaryDigits: 8,
+  fontDyna: 0,
+  fontGdyn: 0,
 }
 
 function usePersisted(key, fallback) {
@@ -63,6 +68,8 @@ function usePersisted(key, fallback) {
   return [value, setValue]
 }
 
+const URL_VIEW = new URLSearchParams(window.location.search).get('view') // 'main' | 'summary' | null
+
 export default function App() {
   const { scores, redTotal, blueTotal } = useScores()
   const [gutter, setGutter]                 = usePersisted('scoreroom_gutter', DEFAULTS.gutter)
@@ -73,7 +80,11 @@ export default function App() {
   const [view, setView]                     = usePersisted('scoreroom_view', DEFAULTS.view)
   const [summaryVariant, setSummaryVariant] = usePersisted('scoreroom_summaryVariant', DEFAULTS.summaryVariant)
   const [summaryDigits, setSummaryDigits]   = usePersisted('scoreroom_summaryDigits', DEFAULTS.summaryDigits)
+  const [fontDyna, setFontDyna]             = usePersisted('scoreroom_fontDyna', DEFAULTS.fontDyna)
+  const [fontGdyn, setFontGdyn]             = usePersisted('scoreroom_fontGdyn', DEFAULTS.fontGdyn)
 
+  const effectiveView = URL_VIEW || view
+  const isLittlebit = font.includes('littlebit')
   const [showControls, setShowControls] = useState(true)
   const prevLeaderRef = useRef(null)
 
@@ -112,20 +123,29 @@ export default function App() {
     setUnitsPerColumn(DEFAULTS.unitsPerColumn)
     setFont(DEFAULTS.font)
     setSummaryDigits(DEFAULTS.summaryDigits)
+    setFontDyna(DEFAULTS.fontDyna)
+    setFontGdyn(DEFAULTS.fontGdyn)
   }
 
 
 
+  const fontVariationSettings = isLittlebit
+    ? `'DYNA' ${fontDyna}, 'GDYN' ${fontGdyn}`
+    : undefined
+
+  const isMainLocked = effectiveView === 'main' && !!URL_VIEW
+
   return (
     <div style={{
-      width: '100vw',
-      height: '100vh',
+      width: isMainLocked ? 512 : '100vw',
+      height: isMainLocked ? 384 : '100vh',
       background: '#000',
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: isMainLocked ? 'flex-start' : 'center',
+      justifyContent: isMainLocked ? 'flex-start' : 'center',
+      fontVariationSettings,
     }}>
-      {view === 'main' ? (
+      {effectiveView === 'main' ? (
         <ScoreBoard
           scores={scores}
           gutter={gutter}
@@ -146,15 +166,17 @@ export default function App() {
         pointerEvents: showControls ? 'auto' : 'none',
         transition: 'opacity 0.3s ease',
       }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-          screen
-          <select value={view} onChange={(e) => setView(e.target.value)}>
-            <option value="main">main board</option>
-            <option value="summary">summary screen</option>
-          </select>
-        </label>
+        {!URL_VIEW && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            screen
+            <select value={view} onChange={(e) => setView(e.target.value)}>
+              <option value="main">main board</option>
+              <option value="summary">summary screen</option>
+            </select>
+          </label>
+        )}
 
-        {view === 'main' && (
+        {effectiveView === 'main' && (
           <>
             <Slider label="screen gap" value={gutter} min={0} max={80} onChange={setGutter} />
             <Slider label="unit gap" value={unitGutter} min={-20} max={20} onChange={setUnitGutter} />
@@ -163,7 +185,7 @@ export default function App() {
           </>
         )}
 
-        {view === 'summary' && (
+        {effectiveView === 'summary' && (
           <>
             <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
               layout
@@ -183,6 +205,12 @@ export default function App() {
             {FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         </label>
+        {isLittlebit && (
+          <>
+            <Slider label="DYNA" value={fontDyna} min={0} max={100} onChange={setFontDyna} />
+            <Slider label="GDYN" value={fontGdyn} min={0} max={100} onChange={setFontGdyn} />
+          </>
+        )}
         <button onClick={resetDefaults}>reset</button>
       </div>
     </div>

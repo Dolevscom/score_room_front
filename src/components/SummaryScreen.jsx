@@ -8,7 +8,7 @@ const RED  = '#FF2200'
 const BLUE = '#0055FF'
 const SCREEN_W = 600
 const SCREEN_H = 300
-const DIVIDER = 2
+const DIVIDER = 0
 const STRETCH_FACTOR = 2.6
 
 function clampDigits(total, digits) {
@@ -127,12 +127,19 @@ function BlocksScreen({ redTotal, blueTotal, font, digits }) {
   )
 }
 
-// אופציה 4: territory — הקו זז לפי יחס מוגבר. הפרשים קטנים נראים הרבה גדולים יותר.
+// אופציה 4 / 4a / 4b: territory — משפחת וריאנטים שמראים יחס כוחות
 const TERRITORY_AMP = 3  // כל הפרש מוגבר פי 3 ויזואלית (0.55/0.45 → 0.65/0.35)
-function TerritoryScreen({ redTotal, blueTotal, font, digits }) {
+
+function ampRatio(redTotal, blueTotal) {
   const total = redTotal + blueTotal
   const raw = total === 0 ? 0.5 : redTotal / total
-  const redRatio = Math.max(0.04, Math.min(0.96, 0.5 + (raw - 0.5) * TERRITORY_AMP))
+  const red = Math.max(0.04, Math.min(0.96, 0.5 + (raw - 0.5) * TERRITORY_AMP))
+  return { red, blue: 1 - red }
+}
+
+// 4: territory (מקורי) — הקו זז, טקסט צבעוני על שחור
+function TerritoryScreen({ redTotal, blueTotal, font, digits }) {
+  const { red: redRatio, blue: blueRatio } = ampRatio(redTotal, blueTotal)
   const redW = Math.round(redRatio * (SCREEN_W - DIVIDER))
   const blueW = SCREEN_W - DIVIDER - redW
 
@@ -145,6 +152,62 @@ function TerritoryScreen({ redTotal, blueTotal, font, digits }) {
       <div style={{ width: blueW, flexShrink: 0, overflow: 'hidden', transition: 'width 0.7s ease' }}>
         <DigitRow total={blueTotal} color={BLUE} font={font} width={blueW} height={SCREEN_H} digits={digits} />
       </div>
+    </div>
+  )
+}
+
+// 4a: territory↕ — מחלקה קבועה 50/50, שחור, מתיחה אנכית לפי יחס
+function TerritoryVScreen({ redTotal, blueTotal, font, digits }) {
+  const { red: redRatio, blue: blueRatio } = ampRatio(redTotal, blueTotal)
+  const halfW = (SCREEN_W - DIVIDER) / 2
+  const fontSize = Math.floor(halfW / (digits * 0.65))
+  const redScaleY = STRETCH_FACTOR * 2 * redRatio
+  const blueScaleY = STRETCH_FACTOR * 2 * blueRatio
+
+  const renderSide = (total, color, scaleY) => (
+    <div style={{ width: halfW, height: SCREEN_H, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', transform: `scaleY(${scaleY})`, transition: 'transform 0.7s ease' }}>
+        {clampDigits(total, digits).split('').map((ch, i) => (
+          <RollingDigit key={i} digit={ch} fontSize={fontSize} color={color} font={font} />
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
+      {renderSide(redTotal, RED, redScaleY)}
+      <div style={{ width: DIVIDER, background: '#1a1a1a', flexShrink: 0 }} />
+      {renderSide(blueTotal, BLUE, blueScaleY)}
+    </div>
+  )
+}
+
+// 4b: territory↔ — הדיוויידר נע (דוחפים), שחור, מתיחה אופקית לפי יחס
+function TerritoryHScreen({ redTotal, blueTotal, font, digits }) {
+  const { red: redRatio, blue: blueRatio } = ampRatio(redTotal, blueTotal)
+  const redW = Math.round(redRatio * (SCREEN_W - DIVIDER))
+  const blueW = SCREEN_W - DIVIDER - redW
+  const halfW = (SCREEN_W - DIVIDER) / 2
+  const fontSize = Math.floor(halfW / (digits * 0.65))
+  const redScaleX = redRatio * 2
+  const blueScaleX = blueRatio * 2
+
+  const renderSide = (total, color, width, scaleX) => (
+    <div style={{ width, flexShrink: 0, height: SCREEN_H, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: 'width 0.7s ease' }}>
+      <div style={{ display: 'flex', flexShrink: 0, transform: `scaleX(${scaleX})`, transition: 'transform 0.7s ease' }}>
+        {clampDigits(total, digits).split('').map((ch, i) => (
+          <RollingDigit key={i} digit={ch} fontSize={fontSize} color={color} font={font} />
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex', overflow: 'hidden' }}>
+      {renderSide(redTotal, RED, redW, redScaleX)}
+      <div style={{ width: DIVIDER, background: '#1a1a1a', flexShrink: 0 }} />
+      {renderSide(blueTotal, BLUE, blueW, blueScaleX)}
     </div>
   )
 }
@@ -172,6 +235,10 @@ export default function SummaryScreen({ redTotal = 0, blueTotal = 0, variant = '
     content = <MergedStrip redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
   } else if (variant === 'territory') {
     content = <TerritoryScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+  } else if (variant === 'territory-v') {
+    content = <TerritoryVScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
+  } else if (variant === 'territory-h') {
+    content = <TerritoryHScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
   } else if (variant === 'blocks') {
     content = <BlocksScreen redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
   } else {
