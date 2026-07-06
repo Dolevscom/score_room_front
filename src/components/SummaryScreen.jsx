@@ -6,8 +6,8 @@ import RollingDigit from './RollingDigit'
 // background, RED/BLUE digit color, shared font.
 const RED  = '#FF2200'
 const BLUE = '#0055FF'
-const SCREEN_W = 600
-const SCREEN_H = 300
+const SCREEN_W = 512
+const SCREEN_H = 384
 const DIVIDER = 0
 const STRETCH_FACTOR = 2.6
 

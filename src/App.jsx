@@ -133,16 +133,16 @@ export default function App() {
     ? `'DYNA' ${fontDyna}, 'GDYN' ${fontGdyn}`
     : undefined
 
-  const isMainLocked = effectiveView === 'main' && !!URL_VIEW
+  const isLocked = !!URL_VIEW
 
   return (
     <div style={{
-      width: isMainLocked ? 512 : '100vw',
-      height: isMainLocked ? 384 : '100vh',
+      width: isLocked ? 512 : '100vw',
+      height: isLocked ? 384 : '100vh',
       background: '#000',
       display: 'flex',
-      alignItems: isMainLocked ? 'flex-start' : 'center',
-      justifyContent: isMainLocked ? 'flex-start' : 'center',
+      alignItems: isLocked ? 'flex-start' : 'center',
+      justifyContent: isLocked ? 'flex-start' : 'center',
       fontVariationSettings,
     }}>
       {effectiveView === 'main' ? (
