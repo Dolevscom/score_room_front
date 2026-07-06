@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import RollingDigit from './RollingDigit'
 
-// מסך סכמה ראשי — total per side. Physical screen 96×48cm (2:1), split into
+// מסך סכה ראשי — total per side. Physical screen 96×48cm (2:1), split into
 // two 48×48cm squares. Same visual language as the main board: black
 // background, RED/BLUE digit color, shared font.
 const RED  = '#FF2200'
 const BLUE = '#0055FF'
-const SCREEN_W = 512
-const SCREEN_H = 384
+const SCREEN_W = 306
+const SCREEN_H = 153
 const DIVIDER = 0
 const STRETCH_FACTOR = 2.6
 

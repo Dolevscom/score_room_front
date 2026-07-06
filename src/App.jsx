@@ -158,7 +158,9 @@ export default function App() {
             locked={true}
           />
         ) : (
-          <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant={summaryVariant} font={font} digits={summaryDigits} />
+          <div style={{ width: 306, height: 153, overflow: 'hidden', background: '#000' }}>
+            <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant={summaryVariant} font={font} digits={summaryDigits} />
+          </div>
         )}
       </div>
 
