@@ -13,22 +13,31 @@ export default function ScoreBoard({
   digitsPerUnit = 6,
   unitsPerColumn = DEFAULT_COUNTING_UNITS,
   font = 'ABC Connect Mono Nail',
+  locked = false,
 }) {
   // Each counting column owns a MAX_COUNTING_UNITS-sized slot; only show the first `unitsPerColumn`
   const col = (n) => scores.slice(n * MAX_COUNTING_UNITS, n * MAX_COUNTING_UNITS + unitsPerColumn)
 
+  const effectiveGutter = locked ? Math.min(Math.max(gutter, 0), 4) : gutter
   const screenColumnProps = { unitGutter, digitsPerUnit, font }
 
   return (
     <div style={{
+      width: 512,
+      height: 384,
+      minWidth: 512,
+      minHeight: 384,
       background: '#000',
       display: 'flex', flexDirection: 'row',
-      gap: gutter,
+      gap: effectiveGutter,
+      paddingLeft: effectiveGutter / 2,
+      paddingRight: effectiveGutter / 2,
+      boxSizing: 'border-box',
     }}>
-      <ScreenColumn left={col(0)} right={col(1)} color={RED}  {...screenColumnProps} />
-      <ScreenColumn left={col(2)} right={col(3)} color={RED}  {...screenColumnProps} />
-      <ScreenColumn left={col(4)} right={col(5)} color={BLUE} {...screenColumnProps} />
-      <ScreenColumn left={col(6)} right={col(7)} color={BLUE} {...screenColumnProps} />
+      <ScreenColumn left={col(0)} right={col(1)} color={RED} innerGap={effectiveGutter} {...screenColumnProps} />
+      <ScreenColumn left={col(2)} right={col(3)} color={RED} innerGap={effectiveGutter} {...screenColumnProps} />
+      <ScreenColumn left={col(4)} right={col(5)} color={BLUE} innerGap={effectiveGutter} {...screenColumnProps} />
+      <ScreenColumn left={col(6)} right={col(7)} color={BLUE} innerGap={effectiveGutter} {...screenColumnProps} />
     </div>
   )
 }

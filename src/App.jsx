@@ -137,26 +137,30 @@ export default function App() {
 
   return (
     <div style={{
-      width: isLocked ? 512 : '100vw',
-      height: isLocked ? 384 : '100vh',
+      width: 512,
+      height: 384,
+      minWidth: 512,
+      minHeight: 384,
       background: '#000',
-      display: 'flex',
-      alignItems: isLocked ? 'flex-start' : 'center',
-      justifyContent: isLocked ? 'flex-start' : 'center',
+      position: 'relative',
+      overflow: 'hidden',
       fontVariationSettings,
     }}>
-      {effectiveView === 'main' ? (
-        <ScoreBoard
-          scores={scores}
-          gutter={gutter}
-          unitGutter={unitGutter}
-          digitsPerUnit={digitsPerUnit}
-          unitsPerColumn={unitsPerColumn}
-          font={font}
-        />
-      ) : (
-        <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant={summaryVariant} font={font} digits={summaryDigits} />
-      )}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 512, height: 384 }}>
+        {effectiveView === 'main' ? (
+          <ScoreBoard
+            scores={scores}
+            gutter={gutter}
+            unitGutter={unitGutter}
+            digitsPerUnit={digitsPerUnit}
+            unitsPerColumn={unitsPerColumn}
+            font={font}
+            locked={true}
+          />
+        ) : (
+          <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant={summaryVariant} font={font} digits={summaryDigits} />
+        )}
+      </div>
 
       <div className="scoreroom-controls" style={{
         position: 'fixed', bottom: 6, left: 0, right: 0,
