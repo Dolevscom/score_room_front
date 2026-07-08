@@ -220,7 +220,7 @@ export default function App() {
         )}
       </div>
 
-      {flash && (
+      {flash && effectiveView === 'summary' && (
         <div
           key={flash.key}
           className="overtake-flash"
