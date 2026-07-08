@@ -1,7 +1,68 @@
 import { useState, useEffect, useRef } from 'react'
 import ScoreBoard from './components/ScoreBoard'
 import SummaryScreen from './components/SummaryScreen'
-import { useScores, DEFAULT_COUNTING_UNITS } from './hooks/useScores'
+import { useScores, DEFAULT_COUNTING_UNITS, MAX_COUNTING_UNITS } from './hooks/useScores'
+
+// When any score cell drops to 0 from a positive value (reset event), animate
+// display values counting down 1-by-1 at 20ms/step instead of snapping to 0.
+function useCountdownOnReset(rawScores) {
+  const [display, setDisplay] = useState(() => [...rawScores])
+  const intervalRef = useRef(null)
+  const prevRef = useRef([...rawScores])
+  const rawRef = useRef(rawScores)
+  const animatingRef = useRef(new Set())
+
+  useEffect(() => { rawRef.current = rawScores }, [rawScores])
+
+  useEffect(() => {
+    const prev = prevRef.current
+    prevRef.current = [...rawScores]
+
+    const newlyReset = []
+    for (let i = 0; i < rawScores.length; i++) {
+      if (rawScores[i] === 0 && prev[i] > 0) {
+        newlyReset.push(i)
+        animatingRef.current.add(i)
+      }
+    }
+
+    if (newlyReset.length === 0) {
+      setDisplay(d => animatingRef.current.size === 0
+        ? rawScores
+        : d.map((v, i) => animatingRef.current.has(i) ? v : rawScores[i])
+      )
+      return
+    }
+
+    setDisplay(d => d.map((v, i) => {
+      if (newlyReset.includes(i)) return prev[i]
+      if (animatingRef.current.has(i)) return v
+      return rawScores[i]
+    }))
+
+    if (!intervalRef.current) {
+      intervalRef.current = setInterval(() => {
+        setDisplay(d => {
+          const raw = rawRef.current
+          const next = d.map((v, i) => {
+            if (!animatingRef.current.has(i)) return raw[i]
+            const nv = v - 1
+            if (nv <= 0) { animatingRef.current.delete(i); return 0 }
+            return nv
+          })
+          if (animatingRef.current.size === 0) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+          }
+          return next
+        })
+      }, 20)
+    }
+  }, [rawScores])
+
+  useEffect(() => () => clearInterval(intervalRef.current), [])
+  return display
+}
 
 const FONTS = [
   'ABC Connect Mono Nail',
@@ -25,24 +86,6 @@ const SUMMARY_VARIANTS = [
   { value: 'blocks',    label: '5: blocks' },
 ]
 
-function playOvertakeSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(80, ctx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(35, ctx.currentTime + 0.45)
-    gain.gain.setValueAtTime(0, ctx.currentTime)
-    gain.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 0.01)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55)
-    osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + 0.55)
-    osc.onended = () => ctx.close()
-  } catch (_) {}
-}
 
 const DEFAULTS = {
   gutter: 8,
@@ -55,6 +98,7 @@ const DEFAULTS = {
   summaryDigits: 8,
   fontDyna: 0,
   fontGdyn: 0,
+  rowOffset: 0,
 }
 
 function usePersisted(key, fallback) {
@@ -71,7 +115,10 @@ function usePersisted(key, fallback) {
 const URL_VIEW = new URLSearchParams(window.location.search).get('view') // 'main' | 'summary' | null
 
 export default function App() {
-  const { scores, redTotal, blueTotal } = useScores()
+  const { scores: rawScores } = useScores()
+  const scores = useCountdownOnReset(rawScores)
+  const redTotal  = scores.slice(0, 4 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
+  const blueTotal = scores.slice(4 * MAX_COUNTING_UNITS).reduce((a, b) => a + b, 0)
   const [gutter, setGutter]                 = usePersisted('scoreroom_gutter', DEFAULTS.gutter)
   const [unitGutter, setUnitGutter]         = usePersisted('scoreroom_unitGutter', DEFAULTS.unitGutter)
   const [digitsPerUnit, setDigitsPerUnit]   = usePersisted('scoreroom_digitsPerUnit', DEFAULTS.digitsPerUnit)
@@ -82,17 +129,24 @@ export default function App() {
   const [summaryDigits, setSummaryDigits]   = usePersisted('scoreroom_summaryDigits', DEFAULTS.summaryDigits)
   const [fontDyna, setFontDyna]             = usePersisted('scoreroom_fontDyna', DEFAULTS.fontDyna)
   const [fontGdyn, setFontGdyn]             = usePersisted('scoreroom_fontGdyn', DEFAULTS.fontGdyn)
+  const [rowOffset, setRowOffset]           = usePersisted('scoreroom_rowOffset', DEFAULTS.rowOffset)
 
   const effectiveView = URL_VIEW || view
   const isLittlebit = font.includes('littlebit')
   const [showControls, setShowControls] = useState(true)
+  const [flash, setFlash] = useState(null)
+  const flashKeyRef = useRef(0)
+  const flashTimerRef = useRef(null)
   const prevLeaderRef = useRef(null)
 
   useEffect(() => {
     if (redTotal + blueTotal === 0) return
     const leader = redTotal > blueTotal ? 'red' : 'blue'
     if (prevLeaderRef.current !== null && leader !== prevLeaderRef.current) {
-      playOvertakeSound()
+      clearTimeout(flashTimerRef.current)
+      flashKeyRef.current += 1
+      setFlash({ color: leader === 'red' ? '#FF2200' : '#0055FF', key: flashKeyRef.current })
+      flashTimerRef.current = setTimeout(() => setFlash(null), 1050)
     }
     prevLeaderRef.current = leader
   }, [redTotal, blueTotal])
@@ -125,6 +179,7 @@ export default function App() {
     setSummaryDigits(DEFAULTS.summaryDigits)
     setFontDyna(DEFAULTS.fontDyna)
     setFontGdyn(DEFAULTS.fontGdyn)
+    setRowOffset(DEFAULTS.rowOffset)
   }
 
 
@@ -156,6 +211,7 @@ export default function App() {
             unitsPerColumn={unitsPerColumn}
             font={font}
             locked={true}
+            rowOffset={rowOffset}
           />
         ) : (
           <div style={{ width: 306, height: 153, overflow: 'hidden', background: '#000' }}>
@@ -163,6 +219,15 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {flash && (
+        <div
+          key={flash.key}
+          className="overtake-flash"
+          style={{ position: 'absolute', inset: 0, background: flash.color, zIndex: 10, pointerEvents: 'none' }}
+          onAnimationEnd={() => setFlash(null)}
+        />
+      )}
 
       <div className="scoreroom-controls" style={{
         position: 'fixed', bottom: 6, left: 0, right: 0,
@@ -188,6 +253,7 @@ export default function App() {
             <Slider label="unit gap" value={unitGutter} min={-20} max={20} onChange={setUnitGutter} />
             <Slider label="digits" value={digitsPerUnit} min={1} max={10} onChange={setDigitsPerUnit} />
             <Slider label="units" value={unitsPerColumn} min={4} max={48} onChange={setUnitsPerColumn} />
+            <Slider label="row offset" value={rowOffset} min={-16} max={16} onChange={setRowOffset} />
           </>
         )}
 

@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
 import RollingDigit from './RollingDigit'
 
 // מסך סכה ראשי — total per side. Physical screen 96×48cm (2:1), split into
@@ -213,23 +212,6 @@ function TerritoryHScreen({ redTotal, blueTotal, font, digits }) {
 }
 
 export default function SummaryScreen({ redTotal = 0, blueTotal = 0, variant = 'normal', font = 'ABC Connect Mono Nail', digits = 8 }) {
-  const [flash, setFlash] = useState(null) // { color, key }
-  const prevLeaderRef = useRef(null)
-  const flashTimerRef = useRef(null)
-  const flashKeyRef = useRef(0)
-
-  useEffect(() => {
-    if (redTotal + blueTotal === 0) return
-    const leader = redTotal > blueTotal ? 'red' : 'blue'
-    if (prevLeaderRef.current !== null && leader !== prevLeaderRef.current) {
-      clearTimeout(flashTimerRef.current)
-      flashKeyRef.current += 1
-      setFlash({ color: leader === 'red' ? RED : BLUE, key: flashKeyRef.current })
-      flashTimerRef.current = setTimeout(() => setFlash(null), 1050)
-    }
-    prevLeaderRef.current = leader
-  }, [redTotal, blueTotal])
-
   let content
   if (variant === 'merged') {
     content = <MergedStrip redTotal={redTotal} blueTotal={blueTotal} font={font} digits={digits} />
@@ -253,16 +235,8 @@ export default function SummaryScreen({ redTotal = 0, blueTotal = 0, variant = '
   }
 
   return (
-    <div style={{ position: 'relative', width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
+    <div style={{ width: SCREEN_W, height: SCREEN_H, background: '#000', display: 'flex' }}>
       {content}
-      {flash && (
-        <div
-          key={flash.key}
-          className="overtake-flash"
-          style={{ position: 'absolute', inset: 0, background: flash.color, zIndex: 20 }}
-          onAnimationEnd={() => setFlash(null)}
-        />
-      )}
     </div>
   )
 }

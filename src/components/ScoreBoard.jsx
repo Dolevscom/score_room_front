@@ -14,6 +14,7 @@ export default function ScoreBoard({
   unitsPerColumn = DEFAULT_COUNTING_UNITS,
   font = 'ABC Connect Mono Nail',
   locked = false,
+  rowOffset = 0,
 }) {
   // Each counting column owns a MAX_COUNTING_UNITS-sized slot; only show the first `unitsPerColumn`
   const col = (n) => scores.slice(n * MAX_COUNTING_UNITS, n * MAX_COUNTING_UNITS + unitsPerColumn)
@@ -33,6 +34,7 @@ export default function ScoreBoard({
       paddingLeft: effectiveGutter / 2,
       paddingRight: effectiveGutter / 2,
       boxSizing: 'border-box',
+      transform: rowOffset !== 0 ? `translateY(${rowOffset}px)` : undefined,
     }}>
       <ScreenColumn left={col(0)} right={col(1)} color={RED} innerGap={effectiveGutter} {...screenColumnProps} />
       <ScreenColumn left={col(2)} right={col(3)} color={RED} innerGap={effectiveGutter} {...screenColumnProps} />
