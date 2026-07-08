@@ -98,7 +98,7 @@ const DEFAULTS = {
   summaryDigits: 8,
   fontDyna: 0,
   fontGdyn: 0,
-  rowOffset: 0,
+  rowOffset: -2,
 }
 
 function usePersisted(key, fallback) {
