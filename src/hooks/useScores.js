@@ -67,7 +67,15 @@ export function useScores() {
         }
       }, TICK)
 
-      return () => clearInterval(id)
+      window.__pumpScores = (val = 25) => {
+        cellRef.current.fill(val)
+        setState({ scores: [...cellRef.current], redTotal: val * NUM_CELLS / 2, blueTotal: val * NUM_CELLS / 2 })
+      }
+      window.__simulateReset = () => {
+        cellRef.current.fill(0)
+        setState({ scores: Array(NUM_CELLS).fill(0), redTotal: 0, blueTotal: 0 })
+      }
+      return () => { clearInterval(id); delete window.__pumpScores; delete window.__simulateReset }
     }
 
     // Real backend polling

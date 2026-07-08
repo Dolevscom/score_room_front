@@ -84,6 +84,8 @@ const SUMMARY_VARIANTS = [
   { value: 'territory-v', label: '4a: territory↕' },
   { value: 'territory-h', label: '4b: territory↔' },
   { value: 'blocks',    label: '5: blocks' },
+  { value: 'framed',    label: '6: framed' },
+  { value: 'marching',  label: '7: marching' },
 ]
 
 
@@ -141,14 +143,14 @@ export default function App() {
 
   useEffect(() => {
     if (redTotal + blueTotal === 0) return
-    const leader = redTotal > blueTotal ? 'red' : 'blue'
-    if (prevLeaderRef.current !== null && leader !== prevLeaderRef.current) {
+    const leader = redTotal > blueTotal ? 'red' : blueTotal > redTotal ? 'blue' : null
+    if (leader !== null && prevLeaderRef.current !== null && leader !== prevLeaderRef.current) {
       clearTimeout(flashTimerRef.current)
       flashKeyRef.current += 1
       setFlash({ color: leader === 'red' ? '#FF2200' : '#0055FF', key: flashKeyRef.current })
       flashTimerRef.current = setTimeout(() => setFlash(null), 1050)
     }
-    prevLeaderRef.current = leader
+    if (leader !== null) prevLeaderRef.current = leader
   }, [redTotal, blueTotal])
 
   useEffect(() => {
@@ -213,6 +215,14 @@ export default function App() {
             locked={true}
             rowOffset={rowOffset}
           />
+        ) : summaryVariant === 'framed' ? (
+          <SummaryFrame font={font}>
+            <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant="normal" font={font} digits={summaryDigits} />
+          </SummaryFrame>
+        ) : summaryVariant === 'marching' ? (
+          <MarchingFrame font={font} color={redTotal >= blueTotal ? RED_C : BLUE_C}>
+            <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant="normal" font={font} digits={summaryDigits} />
+          </MarchingFrame>
         ) : (
           <div style={{ width: 306, height: 153, overflow: 'hidden', background: '#000' }}>
             <SummaryScreen redTotal={redTotal} blueTotal={blueTotal} variant={summaryVariant} font={font} digits={summaryDigits} />
@@ -284,7 +294,106 @@ export default function App() {
           </>
         )}
         <button onClick={resetDefaults}>reset</button>
+        <button onClick={() => { window.__pumpScores?.(80); setTimeout(() => window.__simulateReset?.(), 800) }}>test reset anim</button>
       </div>
+    </div>
+  )
+}
+
+const FRAME_CHAR = '*'
+const FRAME_CELL = 8   // square cell — horizontal pitch = vertical pitch
+const FRAME_PAD  = 3   // inner gap: chosen so totalW = 8+306+6+8 = 328 = 41×8 exactly
+const CONTENT_W  = 306
+const CONTENT_H  = 153
+const RED_C  = '#FF2200'
+const BLUE_C = '#0055FF'
+
+function SummaryFrame({ font, children }) {
+  // totalW = FRAME_CELL + CONTENT_W + FRAME_PAD*2 + FRAME_CELL = 328 = 41*8 (exact)
+  const totalW = FRAME_CELL + CONTENT_W + FRAME_PAD * 2 + FRAME_CELL
+  const innerH = CONTENT_H + FRAME_PAD * 2
+
+  const hCount = totalW / FRAME_CELL        // 41 — exact, no rounding
+  const halfH  = Math.floor(hCount / 2)     // 20 red, 21 blue
+  const vCount = Math.ceil(innerH / FRAME_CELL)  // 20, clips 1px via overflow:hidden
+
+  const cell = (color, k) => (
+    <span key={k} style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      width: FRAME_CELL, height: FRAME_CELL, flexShrink: 0,
+      fontSize: FRAME_CELL * 0.85, lineHeight: 1,
+      color, fontFamily: font,
+    }}>{FRAME_CHAR}</span>
+  )
+
+  const HRow = () => (
+    <div style={{ display: 'flex', height: FRAME_CELL }}>
+      {Array.from({ length: halfH },          (_, i) => cell(RED_C,  i))}
+      {Array.from({ length: hCount - halfH }, (_, i) => cell(BLUE_C, `b${i}`))}
+    </div>
+  )
+
+  const VCol = ({ color }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', width: FRAME_CELL, height: innerH, overflow: 'hidden', flexShrink: 0 }}>
+      {Array.from({ length: vCount }, (_, i) => cell(color, i))}
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'inline-flex', flexDirection: 'column', background: '#000' }}>
+      <HRow />
+      <div style={{ display: 'flex' }}>
+        <VCol color={RED_C} />
+        <div style={{ padding: FRAME_PAD, background: '#000', flexShrink: 0 }}>
+          {children}
+        </div>
+        <VCol color={BLUE_C} />
+      </div>
+      <HRow />
+    </div>
+  )
+}
+
+const MARCH_PERIOD = 8  // seconds per full clockwise revolution
+
+function MarchingFrame({ font, color, children }) {
+  const totalW     = FRAME_CELL + CONTENT_W + FRAME_PAD * 2 + FRAME_CELL
+  const innerH     = CONTENT_H + FRAME_PAD * 2
+  const hCount     = totalW / FRAME_CELL
+  const vCount     = Math.ceil(innerH / FRAME_CELL)
+  const totalPerim = 2 * hCount + 2 * vCount
+
+  const cell = (perimIdx, k) => (
+    <span key={k} style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      width: FRAME_CELL, height: FRAME_CELL, flexShrink: 0,
+      fontSize: FRAME_CELL * 0.85, lineHeight: 1,
+      color, fontFamily: font,
+      animation: `march ${MARCH_PERIOD}s linear infinite`,
+      animationDelay: `${-((perimIdx / totalPerim) * MARCH_PERIOD).toFixed(3)}s`,
+    }}>{FRAME_CHAR}</span>
+  )
+
+  const topCells    = Array.from({ length: hCount }, (_, i) => cell(i, `t${i}`))
+  const rightCells  = Array.from({ length: vCount }, (_, i) => cell(hCount + i, `r${i}`))
+  const bottomCells = Array.from({ length: hCount }, (_, i) => cell(hCount + vCount + i, `b${i}`))
+  const leftCells   = Array.from({ length: vCount }, (_, i) => cell(2 * hCount + 2 * vCount - 1 - i, `l${i}`))
+
+  return (
+    <div style={{ display: 'inline-flex', flexDirection: 'column', background: '#000' }}>
+      <div style={{ display: 'flex', height: FRAME_CELL }}>{topCells}</div>
+      <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', width: FRAME_CELL, height: innerH, overflow: 'hidden', flexShrink: 0 }}>
+          {leftCells}
+        </div>
+        <div style={{ padding: FRAME_PAD, background: '#000', flexShrink: 0 }}>
+          {children}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', width: FRAME_CELL, height: innerH, overflow: 'hidden', flexShrink: 0 }}>
+          {rightCells}
+        </div>
+      </div>
+      <div style={{ display: 'flex', height: FRAME_CELL }}>{bottomCells}</div>
     </div>
   )
 }

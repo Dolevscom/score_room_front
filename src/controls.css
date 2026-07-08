@@ -49,6 +49,14 @@
   border-color: #444;
 }
 
+@keyframes march {
+  0%   { opacity: 0.1; }
+  45%  { opacity: 0.1; }
+  50%  { opacity: 1;   }
+  55%  { opacity: 0.1; }
+  100% { opacity: 0.1; }
+}
+
 @keyframes overtake-flash {
   0%   { opacity: 0; }
   6%   { opacity: 0.8; }
